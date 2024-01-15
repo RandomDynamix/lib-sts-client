@@ -11,17 +11,17 @@ export class STSClient {
         const nKeyPair = nkeys.fromSeed(Buffer.from(nKeySeed));
         const requestID = randomUUID();
         console.log(`REQUEST ID: ${requestID}`);
-        let initiateResult = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
+        let { data } = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
         console.log('HERE!');
-        console.log(`INITIATE RESULT: ${JSON.stringify(initiateResult)}`);
+        console.log(`INITIATE RESULT: ${JSON.stringify(data)}`);
         console.log('HERE AGAIN');
-        if (initiateResult.errors)
-            throw initiateResult.errors;
-        if (!initiateResult.result.session)
+        if (data.errors)
+            throw data.errors;
+        if (!data.result.session)
             throw 'No STS Session established';
         const stsRequest = {
             requestID: requestID,
-            sessionID: initiateResult.result.session,
+            sessionID: data.result.session,
             nKeyUser: nKeyPair.getPublicKey(),
         };
         const verificationRequest = {
