@@ -17,12 +17,14 @@ export class STSClient {
         //Initiate Authorization Session
         const requestID: string = randomUUID();
         const initiateResult: any = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
-        if(!initiateResult.sessionID) throw 'No STS Session established';
+
+        if(initiateResult.errors) throw initiateResult.errors;
+        if(!initiateResult.result.session) throw 'No STS Session established';
 
         //Construct Request & Sign
         const stsRequest = {
             requestID: requestID,
-            sessionID: initiateResult.sessionID,
+            sessionID: initiateResult.result.session,
             nKeyUser: nKeyPair.getPublicKey(),
         };
         const verificationRequest = {
@@ -32,9 +34,11 @@ export class STSClient {
 
         //Post Authorization Verification
         const verifyResult: any = await axios.post(`${stsEndpoint}/authorization/verification`, verificationRequest);
-        if(!verifyResult.token) throw 'STS Authorization Verification Failed';
 
-        return verifyResult.token;
+        if(verifyResult.errors) throw verifyResult.errors;
+        if(!verifyResult.result.token) throw 'STS Authorization Verification Failed';
+
+        return verifyResult.result.token;
     }
 
     async requestUserJWT(_namespace: string, _identity: string) {}
