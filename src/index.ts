@@ -23,6 +23,7 @@ export class STSClient {
         const initiateResult: any = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
 
         //TODO ROD HERE
+        console.log('HERE!');
         console.log(`INITIATE RESULT: ${JSON.stringify(initiateResult)}`)
 
         if(initiateResult.errors) throw initiateResult.errors;
