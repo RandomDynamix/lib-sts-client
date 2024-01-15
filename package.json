@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@randomrod/lib-sts-client",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Security Token Services (STS) Client Library",
   "main": "dist/index.js",
   "typings": "./dist/index.d.ts",

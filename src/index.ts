@@ -24,7 +24,7 @@ export class STSClient {
 
         //TODO ROD HERE
         console.log('HERE!');
-        console.log(`INITIATE RESULT: ${initiateResult}`)
+        console.log(`INITIATE RESULT: ${JSON.stringify(initiateResult)}`)
         console.log('HERE AGAIN');
 
         if(initiateResult.errors) throw initiateResult.errors;
