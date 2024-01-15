@@ -16,7 +16,14 @@ export class STSClient {
 
         //Initiate Authorization Session
         const requestID: string = randomUUID();
+
+        //TODO ROD HERE
+        console.log(`REQUEST ID: ${requestID}`)
+
         const initiateResult: any = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
+
+        //TODO ROD HERE
+        console.log(`INITIATE RESULT: ${JSON.stringify(initiateResult)}`)
 
         if(initiateResult.errors) throw initiateResult.errors;
         if(!initiateResult.result.session) throw 'No STS Session established';
@@ -32,8 +39,14 @@ export class STSClient {
             verification: nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))
         };
 
+        //TODO ROD HERE
+        console.log(`VERIFICATION REQUEST: ${JSON.stringify(verificationRequest)}`)
+
         //Post Authorization Verification
         const verifyResult: any = await axios.post(`${stsEndpoint}/authorization/verification`, verificationRequest);
+
+        //TODO ROD HERE
+        console.log(`VERIFICATION RESULT: ${JSON.stringify(verifyResult)}`)
 
         if(verifyResult.errors) throw verifyResult.errors;
         if(!verifyResult.result.token) throw 'STS Authorization Verification Failed';

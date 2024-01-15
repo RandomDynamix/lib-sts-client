@@ -10,7 +10,9 @@ export class STSClient {
             throw 'Missing either nKeySeed or stsEndpoint';
         const nKeyPair = nkeys.fromSeed(Buffer.from(nKeySeed));
         const requestID = randomUUID();
+        console.log(`REQUEST ID: ${requestID}`);
         const initiateResult = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
+        console.log(`INITIATE RESULT: ${JSON.stringify(initiateResult)}`);
         if (initiateResult.errors)
             throw initiateResult.errors;
         if (!initiateResult.result.session)
@@ -24,7 +26,9 @@ export class STSClient {
             request: stsRequest,
             verification: nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))
         };
+        console.log(`VERIFICATION REQUEST: ${JSON.stringify(verificationRequest)}`);
         const verifyResult = await axios.post(`${stsEndpoint}/authorization/verification`, verificationRequest);
+        console.log(`VERIFICATION RESULT: ${JSON.stringify(verifyResult)}`);
         if (verifyResult.errors)
             throw verifyResult.errors;
         if (!verifyResult.result.token)
