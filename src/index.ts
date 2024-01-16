@@ -27,7 +27,7 @@ export class STSClient {
         const stsRequest = {
             requestID: requestID,
             sessionID: sessionJSON.session,
-            nKeyUser: nKeyPair.getPublicKey(),
+            nKeyUser: nKeyPair.getPublicKey().toString(),
         };
         const verificationRequest = {
             request: stsRequest,
