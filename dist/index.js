@@ -10,13 +10,9 @@ export class STSClient {
             throw 'Missing either nKeySeed or stsEndpoint';
         const nKeyPair = nkeys.fromSeed(Buffer.from(nKeySeed));
         const requestID = randomUUID();
-        console.log(`REQUEST ID: ${requestID}`);
         const sessionResponse = await fetch(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
         const sessionJSON = await sessionResponse.json();
-        console.log('HERE!');
-        console.log(`INITIATE RESULT: ${JSON.stringify(sessionJSON)}`);
-        console.log('HERE AGAIN');
-        if (!sessionJSON.session)
+        if (!sessionJSON?.session)
             throw 'No STS Session established';
         const stsRequest = {
             requestID: requestID,
@@ -25,7 +21,7 @@ export class STSClient {
         };
         const verificationRequest = {
             request: stsRequest,
-            verification: nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))
+            verification: Buffer.from(nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))).toString('base64')
         };
         const verifyPost = {
             method: 'post',

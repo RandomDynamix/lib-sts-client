@@ -19,20 +19,9 @@ export class STSClient {
         //Initiate Authorization Session
         const requestID: string = randomUUID();
 
-        //TODO ROD HERE
-        console.log(`REQUEST ID: ${requestID}`);
-
-        //let { data } = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
-        //let sessionJSON: any = await this.requestJSON(`/authorization/session?requestID=${requestID}`);
         const sessionResponse: any = await fetch(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
         const sessionJSON: any = await sessionResponse.json();
-
-        //TODO ROD HERE
-        console.log('HERE!');
-        console.log(`INITIATE RESULT: ${JSON.stringify(sessionJSON)}`)
-        console.log('HERE AGAIN');
-
-        if(!sessionJSON.session) throw 'No STS Session established';
+        if(!sessionJSON?.session) throw 'No STS Session established';
 
         //Construct Request & Sign
         const stsRequest = {
@@ -42,7 +31,7 @@ export class STSClient {
         };
         const verificationRequest = {
             request: stsRequest,
-            verification: nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))
+            verification: Buffer.from(nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))).toString('base64')
         };
         const verifyPost = {
             method: 'post',
