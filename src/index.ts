@@ -70,6 +70,8 @@ export class STSClient {
         try {
             if(!this.axiosClient) throw 'axiosClient === null';
             const axiosResponse: AxiosResponse = await this.axiosClient.get(relativeURL, {headers: {'Accept':'application/json'}});
+            console.log(`axiosResponse: ${JSON.stringify(axiosResponse)}`);
+
             if (axiosResponse.status > 300) throw `HTTP Status code: ${axiosResponse.status}`;
             if (axiosResponse.data.errors) throw axiosResponse.data.errors;
             return axiosResponse.data.result;
