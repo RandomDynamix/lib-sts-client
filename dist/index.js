@@ -4,6 +4,14 @@ import nkeys from 'ts-nkeys';
 export class STSClient {
     constructor() {
         this.stsEndpoint = process.env.STS_ENDPOINT || null;
+        this.axiosClient = null;
+    }
+    init(stsEndpoint) {
+        if (!stsEndpoint && !this.stsEndpoint)
+            throw 'No STSEndpoint provided or configured in environment';
+        this.axiosClient = axios.create({ baseURL: (stsEndpoint ?? this.stsEndpoint) });
+        if (!this.axiosClient)
+            throw 'Error creating axiosClient';
     }
     async requestServiceJWT(nKeySeed, stsEndpoint = this.stsEndpoint) {
         if (!nKeySeed || !stsEndpoint)
@@ -11,17 +19,17 @@ export class STSClient {
         const nKeyPair = nkeys.fromSeed(Buffer.from(nKeySeed));
         const requestID = randomUUID();
         console.log(`REQUEST ID: ${requestID}`);
-        let { data } = await axios.get(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
+        let sessionJSON = await this.requestJSON(`/authorization/session?requestID=${requestID}`);
+        if (!sessionJSON)
+            throw 'Unable to get response';
         console.log('HERE!');
-        console.log(`INITIATE RESULT: ${JSON.stringify(data)}`);
+        console.log(`INITIATE RESULT: ${JSON.stringify(sessionJSON)}`);
         console.log('HERE AGAIN');
-        if (data.errors)
-            throw data.errors;
-        if (!data.result.session)
+        if (!sessionJSON.session)
             throw 'No STS Session established';
         const stsRequest = {
             requestID: requestID,
-            sessionID: data.result.session,
+            sessionID: sessionJSON.session,
             nKeyUser: nKeyPair.getPublicKey(),
         };
         const verificationRequest = {
@@ -29,13 +37,45 @@ export class STSClient {
             verification: nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))
         };
         console.log(`VERIFICATION REQUEST: ${JSON.stringify(verificationRequest)}`);
-        const verifyResult = await axios.post(`${stsEndpoint}/authorization/verification`, verificationRequest);
-        console.log(`VERIFICATION RESULT: ${JSON.stringify(verifyResult)}`);
-        if (verifyResult.errors)
-            throw verifyResult.errors;
-        if (!verifyResult.result.token)
+        const verifyJSON = await this.postJSON(`${stsEndpoint}/authorization/verification`, verificationRequest);
+        if (!verifyJSON)
+            throw 'Unable to get response';
+        console.log(`VERIFICATION RESULT: ${JSON.stringify(verifyJSON)}`);
+        if (!verifyJSON.token)
             throw 'STS Authorization Verification Failed';
-        return verifyResult.result.token;
+        return verifyJSON.token;
     }
     async requestUserJWT(_namespace, _identity) { }
+    async requestJSON(relativeURL) {
+        try {
+            if (!this.axiosClient)
+                throw 'axiosClient === null';
+            const axiosResponse = await this.axiosClient.get(relativeURL, { headers: { 'Accept': 'application/json' } });
+            if (axiosResponse.status > 300)
+                throw `HTTP Status code: ${axiosResponse.status}`;
+            if (axiosResponse.data.errors)
+                throw axiosResponse.data.errors;
+            return axiosResponse.data.result;
+        }
+        catch (err) {
+            console.log(`STSClient | requestJSON Error: ${JSON.stringify(err)}`);
+        }
+        return null;
+    }
+    async postJSON(relativeURL, postData) {
+        try {
+            if (!this.axiosClient)
+                throw 'axiosClient === null';
+            const axiosResponse = await this.axiosClient.post(relativeURL, postData, { headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } });
+            if (axiosResponse.status > 300)
+                throw `HTTP Status code: ${axiosResponse.status}`;
+            if (axiosResponse.data.errors)
+                throw axiosResponse.data.errors;
+            return axiosResponse.data.result;
+        }
+        catch (err) {
+            console.log(`STSClient | postJSON Error: ${JSON.stringify(err)}`);
+        }
+        return null;
+    }
 }
