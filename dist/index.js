@@ -5,9 +5,13 @@ export class STSClient {
     constructor() {
         this.stsEndpoint = process.env.STS_ENDPOINT || null;
     }
-    async requestServiceJWT(nKeySeed, stsEndpoint = this.stsEndpoint) {
-        if (!nKeySeed || !stsEndpoint)
-            throw 'Missing either nKeySeed or stsEndpoint';
+    async requestServiceJWT(account, nKeySeed, stsEndpoint = this.stsEndpoint) {
+        if (!account)
+            throw 'Missing account identifier';
+        if (!nKeySeed)
+            throw 'Missing nKeySeed';
+        if (!stsEndpoint)
+            throw 'Missing stsEndpoint';
         const nKeyPair = nkeys.fromSeed(Buffer.from(nKeySeed));
         const requestID = randomUUID();
         const sessionResponse = await fetch(`${stsEndpoint}/authorization/session?requestID=${requestID}`);
@@ -17,24 +21,25 @@ export class STSClient {
         const stsRequest = {
             requestID: requestID,
             sessionID: sessionJSON.session,
+            accountID: account,
             nKeyUser: nKeyPair.getPublicKey().toString(),
         };
-        const verificationRequest = {
-            request: stsRequest,
-            verification: Buffer.from(nKeyPair.sign(Buffer.from(JSON.stringify(stsRequest)))).toString('base64')
+        const stsRequestBuffer = Buffer.from(JSON.stringify(stsRequest));
+        const stsRequestSignature = nKeyPair.sign(stsRequestBuffer);
+        const stsVerification = Buffer.from(stsRequestSignature).toString('base64url');
+        const stsVerifyPost = {
+            method: 'POST',
+            body: JSON.stringify({
+                request: stsRequest,
+                verification: stsVerification
+            }),
+            headers: { 'Content-Type': 'application/json' }
         };
-        const verifyPost = {
-            method: 'post',
-            body: JSON.stringify(verificationRequest),
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
-        };
-        console.log(`VERIFICATION REQUEST: ${JSON.stringify(verificationRequest)}`);
-        const verifyReponse = await fetch(`${stsEndpoint}/authorization/verification`, verifyPost);
-        const verifyJSON = await verifyReponse.json();
-        console.log(`VERIFICATION RESULT: ${JSON.stringify(verifyJSON)}`);
-        if (!verifyJSON.token)
+        const authorizationReponse = await fetch(`${stsEndpoint}/authorization/verification`, stsVerifyPost);
+        const authJSON = await authorizationReponse.json();
+        if (!authJSON.token)
             throw 'STS Authorization Verification Failed';
-        return verifyJSON.token;
+        return authJSON.token;
     }
     async requestUserJWT(_namespace, _identity) { }
 }
